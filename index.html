@@ -607,13 +607,11 @@
                 <div class="status-message" id="loginStatusMessage"></div>
                 
                 <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
-                    Contact management for login credentials<br>
-                    <small>Demo: 
-                        
-                        
-                        /manager123 or owner/owner123</small>
-                </div>
-            </div>
+    Contact management for login credentials<br>
+    <div style="margin-top: 15px; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600; font-size: 12px; letter-spacing: 1px;">
+        Powered By WAQAS
+    </div>
+</div>
 
             <div class="app-container" id="appContainer">
                 <div class="store-select">
@@ -674,14 +672,13 @@
                 <div class="status-message" id="statusMessage"></div>
 
                 <div class="dashboard-section">
-                    <div class="dashboard-header">
-                        <h3>🚀 Quick Actions</h3>
-                        <div>
-                            <button class="btn-small dashboard" onclick="openMasterSheet()">Master Dashboard</button>
-                            <button class="btn-small dashboard" onclick="downloadStoreReport()">Store Report</button>
-                        </div>
-                    </div>
-                </div>
+    <div class="dashboard-header">
+        <h3>🚀 Quick Actions</h3>
+        <div id="dashboardButtons">
+            <button class="btn-small dashboard" onclick="downloadStoreReport()">Store Report</button>
+        </div>
+    </div>
+</div>
 
                 <div class="records-section">
                     <div class="records-header">
@@ -918,6 +915,25 @@
                 adminControls.style.display = 'block';
             } else {
                 adminControls.style.display = 'none';
+                // Show/hide Master Dashboard button based on user role
+const dashboardButtons = document.getElementById('dashboardButtons');
+if (currentUser.role === 'Manager' || currentUser.role === 'Owner') {
+    // Add Master Dashboard button for managers/owners
+    if (!document.getElementById('masterDashboardBtn')) {
+        const masterBtn = document.createElement('button');
+        masterBtn.id = 'masterDashboardBtn';
+        masterBtn.className = 'btn-small dashboard';
+        masterBtn.onclick = openMasterSheet;
+        masterBtn.textContent = 'Master Dashboard';
+        dashboardButtons.insertBefore(masterBtn, dashboardButtons.firstChild);
+    }
+} else {
+    // Remove Master Dashboard button for employees
+    const masterBtn = document.getElementById('masterDashboardBtn');
+    if (masterBtn) {
+        masterBtn.remove();
+    }
+}
                 // Auto-select employee's own name and store if they only have one
                 if (currentUser.stores.length === 1) {
                     const userStore = currentUser.stores[0];
@@ -1058,7 +1074,11 @@
                 submittedBy: currentUser.name,
                 submittedAt: new Date().toISOString(),
                 timestamp: new Date().toLocaleString('de-DE')
-            };
+};
+            
+// Check for multiple entries and send notifications
+checkForMultipleEntries(timeEntry);
+sendNotificationToManager(timeEntry);
             
             // Disable submit button
             document.getElementById('submitBtn').disabled = true;
@@ -1332,6 +1352,53 @@
 
         // Add demo data after page load (for testing)
         setTimeout(addDemoData, 2000);
+        // Notification functions
+        function checkForMultipleEntries(newEntry) {
+            const today = new Date().toISOString().split('T')[0];
+            const todayEntries = timeRecords.filter(record => 
+                record.employee === newEntry.employee && 
+                record.store === newEntry.store && 
+                record.date === today
+            );
+            
+            if (todayEntries.length > 0) {
+                alert(`⚠️ NOTICE: Multiple entries detected for ${newEntry.employee} today!\nPrevious entries: ${todayEntries.length}\nPlease verify this is correct.`);
+            }
+        }
+
+        function sendNotificationToManager(entry) {
+            // Get store manager for notification
+            const storeManagers = {
+                'BackWerk Frankenthal': 'Waqas',
+                'BackWerk Offenburg': 'Shazia', 
+                'BackWerk Karlsruhe': 'Furqan',
+                'Back-Factory Karlsruhe': 'Nosheen'
+            };
+            
+            const manager = storeManagers[entry.store];
+            
+            // Only show notification if current user is not the manager
+            if (currentUser.name !== manager) {
+                console.log(`📧 Notification sent to ${manager}: New time entry submitted by ${entry.employee} for ${entry.hoursWorked} hours`);
+                
+                // In a real app, this would send actual notifications
+                // For demo, we'll show a brief message
+                setTimeout(() => {
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed; top: 20px; right: 20px; 
+                        background: #28a745; color: white; 
+                        padding: 12px 20px; border-radius: 8px; 
+                        z-index: 1000; font-size: 14px; font-weight: 600;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    `;
+                    notification.textContent = `Manager ${manager} notified of entry`;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => notification.remove(), 3000);
+                }, 1000);
+            }
+        }
     </script>
 </body>
 </html>
